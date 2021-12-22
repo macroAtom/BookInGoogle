@@ -1,17 +1,25 @@
 package com.example.android.ud843_bookingoogle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.Loader;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<Book>> {
 
 
 //    private final String SAMPLE_JSON_DATA = "{\n" +
@@ -146,31 +154,84 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        BookAsyncTask bookAsyncTask = new BookAsyncTask();
-        bookAsyncTask.execute(URL_JSON);
+//        BookAsyncTask bookAsyncTask = new BookAsyncTask();
+//        bookAsyncTask.execute(URL_JSON);
+
+
+        getSupportLoaderManager().initLoader(0,null, this).forceLoad();
+
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Book book = bookArrayList.get(position);
+
+                Book book1 = mBookAdapter.getItem(position);
+
+                Log.i(LOG_TAG, "onItemClick: ");
+                // 获取书的详情介绍
+                String url = book.getInfolink();
+
+                /**
+                 * 通过intent 向web 浏览器传递信息 并打开事件发生的详情页面
+                 */
+                Uri webpage = Uri.parse(url);
+                Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(intent);
+                }
+
+            }
+        });
 
     }
 
+    @NonNull
+    @Override
+    public Loader<List<Book>> onCreateLoader(int id, @Nullable Bundle args) {
+        return new BookLoader(this,URL_JSON);
+    }
 
-    /**
-     * 内部类 bookAsyncTask
-     */
+    @Override
+    public void onLoadFinished(@NonNull Loader<List<Book>> loader, List<Book> data) {
+        Log.i(LOG_TAG, "onPostExecute: "+data);
 
-    private class BookAsyncTask extends AsyncTask<String, Void, List<Book>>{
 
-        @Override
-        protected List<Book> doInBackground(String... url) {
+//        清空之前的数据
+        mBookAdapter.clear();
 
-            List<Book> book = QueryUtils.extractBookJson(url[0]);
-            return book;
+        if(data != null && !data.isEmpty()){
+            mBookAdapter.addAll(data);
         }
 
-        @Override
-        protected void onPostExecute(List<Book> bookList) {
-            Log.i(LOG_TAG, "onPostExecute: "+bookList);
-            mBookAdapter.addAll(bookList);
-        }
 
     }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<List<Book>> loader) {
+        mBookAdapter.clear();
+    }
+
+
+//    /**
+//     * 内部类 bookAsyncTask
+//     */
+//
+//    private class BookAsyncTask extends AsyncTask<String, Void, List<Book>>{
+//
+//        @Override
+//        protected List<Book> doInBackground(String... url) {
+//
+//            List<Book> book = QueryUtils.extractBookJson(url[0]);
+//            return book;
+//        }
+//
+//        @Override
+//        protected void onPostExecute(List<Book> bookList) {
+//            Log.i(LOG_TAG, "onPostExecute: "+bookList);
+//            mBookAdapter.addAll(bookList);
+//        }
+//
+//    }
 
 }
